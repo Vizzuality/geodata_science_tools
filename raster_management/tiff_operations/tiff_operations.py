@@ -177,7 +177,7 @@ class ManageTiff(object):
         plt.imshow(self.image_array[index], cmap=cm.gist_earth)
         plt.show()
 
-    def compress_file(self, compression='lzw', data_type='uint8', band_index=0):
+    def compress(self, compression='lzw', data_type='uint8', band_index=0):
         """ Save the array data with a specified compression and data type.
         Data_type could be 'unit8', 'unit16', 'unit32', 'int8','int16', or 'int32'.
         If there are multiple bands of data, you can specifcy which to extract by setting the band_index keyword.
@@ -185,33 +185,23 @@ class ManageTiff(object):
         tiffobj = ManageTiff('./tiff_operations/tests/data/RGB.byte.tif','./example-total.tif')
         tiffobj.compress()
         """
+        image_array = self.image_array
+        profile = self.profile
+        if len(image_array.shape) > 2:
+            print('Array has size of {0}, bands = {1}'.format(image_array.shape, profile['count']))
+            print("Slicing single band from image array")
+            image_array = image_array[band_index]
+        prf = copy.deepcopy(profile)
+        prf.update(dtype=data_type, count=1, compress=compression)
 
-        # if len(self.image_array.shape) > 2:
-        #     single_band = self.image_array[band_index]
-        # elif len(self.image_array == 2):
-        #     single_band = self.image_array
-        # else:
-        #     return AttributeError("Uknown dimensions of image_array {imshape}".format(imshape=self.image_array.shape))
-        # #
-        # # print("SHAPE OF IMAGE ARRAY: {0}".format(self.image_array.shape))
-        # # print("SHAPE OF NEW IMAGE ARRAY: {0}".format(single_band.shape))
-        # #
-        # print("Original profile")
-        # print(self.profile)
-        # local_profile = copy.deepcopy(self.profile)
-        #
-        # local_profile.update(dtype=data_type, count=1, compress=compression)
-        #
-        # print("Updated profile?")
-        # print(local_profile)
-        #
-        # with rasterio.open(self.output_file, 'w', **local_profile) as dst:
-        #     dst.write(total.astype(data_type, 1))
-        #
-        #
-        # print(Fore.GREEN + "Success! Compressed {0} to {1}".format(self.input_file, self.output_file))
-        # print(Style.RESET_ALL)
-        # return
+        with rasterio.open(self.output_file, 'w', **prf) as dst:
+            dst.write(image_array.astype(data_type), 1)
+
+        print(Fore.GREEN + "Success! Compressed {0} to {1}".format(self.input_file, self.output_file))
+        print(Style.RESET_ALL)
+        print("Original file:", os.path.getsize(self.input_file))
+        print("New file:", os.path.getsize(self.output_file))
+        return
 
 
 if __name__ == '__main__':
@@ -223,4 +213,4 @@ if __name__ == '__main__':
 
     geo = ManageTiff(args.input_file, args.output_file)
     #geo.display_metadata()
-    geo.compress_file()
+    geo.compress()
