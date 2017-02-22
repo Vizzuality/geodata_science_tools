@@ -1,6 +1,7 @@
 from __future__ import print_function, division
 import time
 from os.path import basename, dirname, exists
+from hurry.filesize import size, alternative, verbose
 import os
 import copy
 import rasterio
@@ -196,11 +197,14 @@ class ManageTiff(object):
 
         with rasterio.open(self.output_file, 'w', **prf) as dst:
             dst.write(image_array.astype(data_type), 1)
+        print(Fore.GREEN + "Success! Converted {0} to {1}".format(self.input_file, self.output_file))
 
-        print(Fore.GREEN + "Success! Compressed {0} to {1}".format(self.input_file, self.output_file))
+        old_filesize = os.path.getsize(self.input_file)
+        new_filesize = os.path.getsize(self.output_file)
+        print("old file = {0}".format(size(old_filesize, system=alternative)))
+        print("new file = {0}".format(size(new_filesize, system=alternative)))
+        print("Diffrence = {0}".format(size(old_filesize - new_filesize, system=alternative)))
         print(Style.RESET_ALL)
-        print("Original file:", os.path.getsize(self.input_file))
-        print("New file:", os.path.getsize(self.output_file))
         return
 
 
@@ -212,5 +216,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     geo = ManageTiff(args.input_file, args.output_file)
-    #geo.display_metadata()
-    geo.compress()
+    geo.display_metadata()
+    geo.compress(data_type='uint8')

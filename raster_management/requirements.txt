@@ -1,3 +1,4 @@
 rasterio==1.0a5
 argparse==1.1
 colorama==0.3.7
+hurry.filesize==0.9
