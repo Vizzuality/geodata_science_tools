@@ -2,6 +2,7 @@ from __future__ import print_function, division
 import time
 from os.path import basename, dirname, exists
 import os
+import copy
 import rasterio
 import numpy
 import glob
@@ -140,43 +141,77 @@ def original():
 
 class ManageTiff(object):
     def __init__(self, input_file, output_file):
-        assert os.path.isfile(input_file), Fore.RED + "Input file {input} does not exist".format(input=args.input_file)
-        if os.path.isfile(args.output_file):
-            print(Fore.RED + "Warning: {output} already exists and will be overwritten.".format(output=args.output_file))
+        assert os.path.isfile(input_file), Fore.RED + "Input file {input} does not exist".format(input=input_file)
+        if os.path.isfile(output_file):
+            print(Fore.RED + "Warning: {output} already exists and will be overwritten.".format(output=output_file))
         print(Style.RESET_ALL)
         self.input_file = input_file
         self.output_file = output_file
+        with rasterio.open(self.input_file) as src:
+            self.metadata = src.meta
+            self.profile = src.profile
+            self.image_array = src.read()
 
 
-    def main(self):
-        print(Fore.GREEN + "{0} --> {1}".format(self.input_file, self.output_file))
-        print(Style.RESET_ALL)
-        return
-
-    @property
-    def metadata(self):
+    def display_metadata(self):
         """example data at './tiff_operations/tests/data/RGB.byte.tif' """
         with rasterio.open(self.input_file) as src:
-            metadata = src.meta
             print('File name: ', src.name)
             print('Source bands:', src.count)
             print("Band indexes: ", src.indexes)
             print("Array dimensions: ", src.shape)
             print("Compression type:", src.compression)
-        for key in metadata:
+        for key in self.metadata:
             if key != 'transform':
-                print('{key}: {val}'.format(key=key, val=metadata[key]))
+                print('{key}: {val}'.format(key=key, val=self.metadata[key]))
             if key == 'transform':
                 print('{key} : '.format(key=key))
-                print(metadata[key])
+                print(self.metadata[key])
         return
 
     def band_preview(self, index=0):
+        """Return an image of a specified band (by index)"""
+        import matplotlib.cm as cm
+        import matplotlib.pyplot as plt
         """Given an index of a band (default 0), return a simple preview plot."""
-        with rasterio.open(self.input_file) as src:
-            band = src.read()
-        plt.imshow(band[index], cmap=cm.gist_earth)
+        plt.imshow(self.image_array[index], cmap=cm.gist_earth)
         plt.show()
+
+    def compress_file(self, compression='lzw', data_type='uint8', band_index=0):
+        """ Save the array data with a specified compression and data type.
+        Data_type could be 'unit8', 'unit16', 'unit32', 'int8','int16', or 'int32'.
+        If there are multiple bands of data, you can specifcy which to extract by setting the band_index keyword.
+        e.g.
+        tiffobj = ManageTiff('./tiff_operations/tests/data/RGB.byte.tif','./example-total.tif')
+        tiffobj.compress()
+        """
+
+        # if len(self.image_array.shape) > 2:
+        #     single_band = self.image_array[band_index]
+        # elif len(self.image_array == 2):
+        #     single_band = self.image_array
+        # else:
+        #     return AttributeError("Uknown dimensions of image_array {imshape}".format(imshape=self.image_array.shape))
+        # #
+        # # print("SHAPE OF IMAGE ARRAY: {0}".format(self.image_array.shape))
+        # # print("SHAPE OF NEW IMAGE ARRAY: {0}".format(single_band.shape))
+        # #
+        # print("Original profile")
+        # print(self.profile)
+        # local_profile = copy.deepcopy(self.profile)
+        #
+        # local_profile.update(dtype=data_type, count=1, compress=compression)
+        #
+        # print("Updated profile?")
+        # print(local_profile)
+        #
+        # with rasterio.open(self.output_file, 'w', **local_profile) as dst:
+        #     dst.write(total.astype(data_type, 1))
+        #
+        #
+        # print(Fore.GREEN + "Success! Compressed {0} to {1}".format(self.input_file, self.output_file))
+        # print(Style.RESET_ALL)
+        # return
 
 
 if __name__ == '__main__':
@@ -187,6 +222,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     geo = ManageTiff(args.input_file, args.output_file)
-    geo.metadata
-    geo.main()
-    geo.band_preview(1)
+    #geo.display_metadata()
+    geo.compress_file()
