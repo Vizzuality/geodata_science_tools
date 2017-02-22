@@ -1,4 +1,6 @@
-# geodata_science_tools
-All our geodata scripts together to bind them all
+# Geospatial Data Science Tools
 
-Under development
+This repo is a place to hold our under-development geospatial data mainipulation scripts.
+As these tools develop over time, these may be moved to invidual repos, and included here as sub-modules.
+
+### Raster Management
