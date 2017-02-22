@@ -138,10 +138,45 @@ def original():
 #interpolation(path, ramp, colouring)
 
 
-def main(input_file, output_file):
-    print("{0} --> {1}".format(input_file, output_file))
-    return
+class ManageTiff(object):
+    def __init__(self, input_file, output_file):
+        assert os.path.isfile(input_file), Fore.RED + "Input file {input} does not exist".format(input=args.input_file)
+        if os.path.isfile(args.output_file):
+            print(Fore.RED + "Warning: {output} already exists and will be overwritten.".format(output=args.output_file))
+        print(Style.RESET_ALL)
+        self.input_file = input_file
+        self.output_file = output_file
 
+
+    def main(self):
+        print(Fore.GREEN + "{0} --> {1}".format(self.input_file, self.output_file))
+        print(Style.RESET_ALL)
+        return
+
+    @property
+    def metadata(self):
+        """example data at './tiff_operations/tests/data/RGB.byte.tif' """
+        with rasterio.open(self.input_file) as src:
+            metadata = src.meta
+            print('File name: ', src.name)
+            print('Source bands:', src.count)
+            print("Band indexes: ", src.indexes)
+            print("Array dimensions: ", src.shape)
+            print("Compression type:", src.compression)
+        for key in metadata:
+            if key != 'transform':
+                print('{key}: {val}'.format(key=key, val=metadata[key]))
+            if key == 'transform':
+                print('{key} : '.format(key=key))
+                print(metadata[key])
+        return
+
+    def band_preview(self, index=0):
+        """Given an index of a band (default 0), return a simple preview plot."""
+        with rasterio.open(self.input_file) as src:
+            band = src.read()
+        plt.imshow(band[index], cmap=cm.gist_earth)
+        plt.show()
 
 
 if __name__ == '__main__':
@@ -150,11 +185,8 @@ if __name__ == '__main__':
     parser.add_argument('input_file', type=str, help='A Tiff input file string <path/filename.tiff>')
     parser.add_argument('output_file', type=str, help='An output name for the file <path/filename.tiff>')
     args = parser.parse_args()
-    assert os.path.isfile(args.input_file), Fore.RED + "Input file {input} does not exist".format(input=args.input_file)
-    if os.path.isfile(args.output_file):
-        print(Fore.RED + "Output target {output} already exists: it will be overwritten.".format(output=args.output_file))
-    print(Style.RESET_ALL)
-    print(Fore.GREEN + "Processing {0}".format(args.input_file))
-    print(Style.RESET_ALL)
 
-    main(args.input_file, args.output_file)
+    geo = ManageTiff(args.input_file, args.output_file)
+    geo.metadata
+    geo.main()
+    geo.band_preview(1)
