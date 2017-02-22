@@ -140,7 +140,6 @@ def original():
 
 def main(input_file, output_file):
     print("{0} --> {1}".format(input_file, output_file))
-    # test mod
     return
 
 
